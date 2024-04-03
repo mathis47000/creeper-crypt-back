@@ -1,12 +1,12 @@
 from flask import Flask
-import uuid
 from flask_socketio import SocketIO, emit, join_room
-from db import create_connection, create_table, insert_message, get_messages
+from model import Room
     
 app = Flask(__name__)
 # db = create_connection()
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, cors_allowed_origins='*')
+lisrooms = []
 
 @socketio.on('message')
 def handle_message(data):
@@ -25,9 +25,22 @@ def on_create_room(data):
     roomName = data['roomName']
     password = data['password']
     # create room
-    url = str(uuid.uuid4())
-    join_room(url)
-    return {'url': url}
+    room = Room(roomName, password)
+    lisrooms.append(room)
+    join_room(room.url)
+    return {'url': str(room.url)}
+
+@socketio.on('joinroom')
+def on_join_room(data):
+    # get room
+    url = data['url']
+    room = next((room for room in lisrooms if room.url == url), None)
+    # if room password is correct
+    if room.password == data['password']:
+        join_room(url)
+        return {'roomName': room.roomName, 'messages': room.get_messages()}
+    else:
+        return None
 
 if __name__ == '__main__':
     socketio.run(app)
