@@ -10,7 +10,12 @@ lisrooms = []
 
 @socketio.on('message')
 def handle_message(data):
-    emit('message', data, broadcast=True)
+    # get room
+    room = next((room for room in lisrooms if room.url == data['url']), None)
+    # add message to room
+    room.add_message(data['message'])
+    # send message to all users in room
+    emit('message', data['message'], to=data['url'])
 
 @socketio.on('connect')
 def handle_connect():
