@@ -1,5 +1,5 @@
 from flask import Flask
-from flask_socketio import SocketIO, emit, join_room
+from flask_socketio import SocketIO, emit, join_room, leave_room
 from model import Room
     
 app = Flask(__name__)
@@ -23,6 +23,9 @@ def handle_connect():
     
 @socketio.on('disconnect')
 def handle_disconnect():
+    # remove user from all his rooms
+    for room in lisrooms:
+        leave_room(room.url)
     print('disconnected')
     
 @socketio.on('createroom')
