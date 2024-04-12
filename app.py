@@ -1,7 +1,11 @@
+import json
+
 from flask import Flask
 from flask_socketio import SocketIO, emit, join_room, leave_room
-from model import Room
-    
+
+import pseudo_generator
+from model import Room, Message
+
 app = Flask(__name__)
 # db = create_connection()
 app.config['SECRET_KEY'] = 'secret!'
@@ -13,9 +17,10 @@ def handle_message(data):
     # get room
     room = next((room for room in lisrooms if room.id == data['id']), None)
     # add message to room
-    room.add_message(data['message'])
+    message = Message(data['message'], data['pseudo'])
+    room.add_message(json.dumps(message.__dict__))
     # send message to all users in room
-    emit('message', data['message'], to=data['id'])
+    emit('message',  json.dumps(message.__dict__), to=data['id'])
 
 @socketio.on('connect')
 def handle_connect():
@@ -46,7 +51,19 @@ def on_join_room(data):
     # if room password is correct
     if room.password == data['password']:
         join_room(id)
-        return {'roomName': room.roomName, 'messages': room.get_messages()}
+        pseudo = "";
+
+        while True:
+            # generate pseudo
+            pseudo = pseudo_generator.generate_pseudo();
+            # check if pseudo is not already used in room
+            if pseudo not in [json.loads(message).get('pseudo') for message in room.get_messages()]:
+                break
+
+
+
+
+        return {'roomName': room.roomName, 'messages': room.get_messages(),'pseudo':pseudo}
     else:
         return None
 
