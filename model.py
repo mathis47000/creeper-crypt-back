@@ -1,4 +1,6 @@
 import uuid
+import pseudo_generator
+
 
 class Room:
     def __init__(self, roomName, password):
@@ -12,3 +14,14 @@ class Room:
         
     def get_messages(self):
         return self.messages
+
+class Message:
+    def __init__(self, content, pseudo):
+        self.content = content
+        self.pseudo = pseudo
+
+    def get_content(self):
+        return self.content
+
+    def get_pseudo(self):
+        return self.pseudo
