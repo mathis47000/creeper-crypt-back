@@ -2,12 +2,13 @@
 import json
 import os
 
-from flask import Flask
+from flask import Flask, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
 
-import pseudo_generator
+from service import pseudo_generator
 from model import Room, Message
-from security_utils import encrypt
+from service.email_service import send_room_link
+from service.security_utils import encrypt
 
 app = Flask(__name__)
 
@@ -80,6 +81,16 @@ def on_join_room(data):
                 'pseudo': pseudo}
     else:
         return None
+
+
+@app.route('/api/room/share', methods=['POST'])
+def share_room():
+    data = request.json
+    try:
+        send_room_link(data['email'], data['room-url'])
+        return {'status': 'email sent'}
+    except:
+        return {'status': 'error', 'message': 'error while sending email'}
 
 
 if __name__ == '__main__':

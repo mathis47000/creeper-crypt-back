@@ -1,7 +1,7 @@
 import json
 import uuid
 
-from security_utils import encrypt, decrypt
+from service.security_utils import encrypt, decrypt
 
 
 class Room:
