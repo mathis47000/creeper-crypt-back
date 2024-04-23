@@ -4,4 +4,6 @@ services:
     container_name: creeper-crypt-back
     build: .
     ports:
-      - '5100:5000'
+      - '5100:80'
+    environment:
+      - SECRET_KEY=TO_REPLACE

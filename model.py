@@ -1,5 +1,7 @@
+import json
 import uuid
-import pseudo_generator
+
+from security_utils import encrypt, decrypt
 
 
 class Room:
@@ -15,6 +17,9 @@ class Room:
     def get_messages(self):
         return self.messages
 
+    def get_decrypted_messages(self, key):
+        return [Message(json.loads(message).get('content'),json.loads(message).get('pseudo')).decrypt_message(key) for message in self.messages]
+
 class Message:
     def __init__(self, content, pseudo):
         self.content = content
@@ -25,3 +30,13 @@ class Message:
 
     def get_pseudo(self):
         return self.pseudo
+
+    def crypt_message(self, key):
+        self.content = encrypt(self.content, key)
+        self.pseudo = encrypt(self.pseudo, key)
+        return self
+
+    def decrypt_message(self, key):
+        self.content = decrypt(self.content, key)
+        self.pseudo = decrypt(self.pseudo, key)
+        return self
