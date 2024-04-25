@@ -28,7 +28,7 @@ docker build -t socketpy .
 
 - Run container:
 ```bash
-docker run -e SECRET_KEY=<secret_key> -p <port_you_want>:5000 socketpy
+docker run -e SECRET_KEY=<secret_key> -e EMAIL=<email_smtp> -e EMAIL_PASSWORD=<email_smtp_password>  -p <port_you_want>:5000 socketpy
 ```
 
 # Or use docker-compose:

@@ -7,3 +7,5 @@ services:
       - '5100:80'
     environment:
       - SECRET_KEY=TO_REPLACE
+      - EMAIL=TO_REPLACE
+      - EMAIL_PASSWORD=TO_REPLACE
