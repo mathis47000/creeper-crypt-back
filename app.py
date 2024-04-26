@@ -86,14 +86,22 @@ def on_join_room(data):
         return None
 
 
-@app.route('/api/room/share', methods=['POST'])
-def share_room():
-    data = request.json
-    try:
-        send_room_link(data['email'], data['room-url'])
-        return {'status': 'email sent'}
-    except:
-        return {'status': 'error', 'message': 'error while sending email'}
+@socketio.on('sharelink')
+def share_room(data):
+
+    id = data['id']
+    room = next((room for room in lisrooms if room.id == id), None)
+
+    if room.password == encrypt(data['password'], app.config['SECRET_KEY']):
+        try:
+            send_room_link(data['email'], data['room_url'])
+            return {'status': 'ok', 'message': 'email sent'}
+        except Exception as e:
+            print(e)
+            return {'status': 'error', 'message': 'error while sending email'}
+    else:
+        return {'status': 'error', 'message': 'wrong password'}
+
 
 @socketio.on('getpublickey')
 def get_key(data):

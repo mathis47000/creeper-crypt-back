@@ -12,18 +12,18 @@ def send_room_link(receiver_email, room_url):
 
 
     message = MIMEMultipart("alternative")
-    message["Subject"] = "Join a room on Creeper"
+    message["Subject"] = "Rejoindre une salle sur Creeper Crypt"
     message["From"] = sender_email
     message["To"] = receiver_email
 
     text = """\
-    Hi,
-    You receive this email because you have been invited to join a room.
-    You can join the room by clicking on the following link:
+    Bonjour,
+    Vous recevez cet e-mail car vous avez été invité à rejoindre une salle.
+    Vous pouvez rejoindre la salle en cliquant sur le lien suivant :
     {}
     
-    Best regards,
-    Creeper team
+    Meilleures salutations,
+    L'équipe Creeper
     """.format(room_url)
 
     # Turn these into plain/html MIMEText objects
