@@ -1,4 +1,3 @@
-
 import json
 import os
 
@@ -8,7 +7,7 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 from service import pseudo_generator
 from model import Room, Message
 from service.email_service import send_room_link
-from service.security_utils import encrypt
+from service.security_utils import encrypt, get_private_key, save_key, get_public_key
 
 app = Flask(__name__)
 
@@ -37,10 +36,13 @@ def handle_message(data):
 @socketio.on('createroom')
 def on_create_room(data):
     roomName = data['roomName']
-    password = encrypt(data['password'], app.config['SECRET_KEY'])
+    password = encrypt(data['roomPassword'], app.config['SECRET_KEY'])
     room = Room(roomName, password)
     lisrooms.append(room)
     join_room(room.id)
+
+    save_key(data['publicKey'], data['privateKey'], room.id)
+
     return {'id': str(room.id)}
 
 
@@ -78,7 +80,8 @@ def on_join_room(data):
 
         return {'roomName': room.roomName,
                 'messages': decrypted_messages_json,
-                'pseudo': pseudo}
+                'pseudo': pseudo,
+                'privateKey': get_private_key(data['publicKey'], id)}
     else:
         return None
 
@@ -91,6 +94,12 @@ def share_room():
         return {'status': 'email sent'}
     except:
         return {'status': 'error', 'message': 'error while sending email'}
+
+@socketio.on('getpublickey')
+def get_key(data):
+
+    print(data)
+    return {'public_key': get_public_key(data['room'])}
 
 
 if __name__ == '__main__':
