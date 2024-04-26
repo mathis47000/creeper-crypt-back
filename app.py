@@ -7,7 +7,7 @@ from flask_socketio import SocketIO, emit, join_room, leave_room, close_room
 from datetime import datetime, timedelta
 
 from service import pseudo_generator
-from model import Room, Message
+from model import Room, Message, User
 from service.email_service import send_room_link
 from service.security_utils import encrypt, get_private_key, save_key, get_public_key
 
@@ -61,12 +61,13 @@ def handle_connect():
     print('connected')
 
 @socketio.on('disconnect')
-def handle_disconnect():
-    # remove user from all his rooms
-    for room in lisrooms:
-        leave_room(room.id)
-    print('disconnected')
-
+def handle_disconnect(): 
+    print(request.sid)
+    user_id = request.sid
+    room_of_user = next((room for room in lisrooms if user_id in room.get_users_id()), None)
+    if room_of_user is not None:
+        room_of_user.remove_user_by_id(user_id)
+        socketio.emit('listUsers', json.dumps(room_of_user.get_users()), to=room_of_user.id)
 
 @socketio.on('joinroom')
 def on_join_room(data):
@@ -88,7 +89,10 @@ def on_join_room(data):
             # check if pseudo is not already used in room
             if pseudo not in decrypted_messages:
                 break
-
+        if len(room.users) >= room.limitUsers:
+            return None
+        room.add_user(User(pseudo, request.sid))
+        socketio.emit('listUsers', json.dumps(room.get_users()), to=id)
         decrypted_messages_json = [json.dumps(message.__dict__) for message in decrypted_messages]
 
         return {'roomName': room.roomName,
