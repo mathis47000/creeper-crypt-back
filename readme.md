@@ -37,3 +37,7 @@ docker run -e SECRET_KEY=<secret_key> -p <port_you_want>:5000 socketpy
 ```bash
 docker-compose up
 ```
+
+# Conception details:
+
+- Refers to conception v1.png
