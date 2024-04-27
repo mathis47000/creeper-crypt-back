@@ -37,3 +37,8 @@ docker run -e SECRET_KEY=<secret_key> -e EMAIL=<email_smtp> -e EMAIL_PASSWORD=<e
 ```bash
 docker-compose up
 ```
+
+
+# Conception details:
+
+- Refers to conception v2.png

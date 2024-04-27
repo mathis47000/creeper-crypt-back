@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from service import pseudo_generator
 from model import Room, Message
 from service.email_service import send_room_link
-from service.security_utils import encrypt
+from service.security_utils import encrypt, get_private_key, save_key, get_public_key
 
 app = Flask(__name__)
 
@@ -40,7 +40,7 @@ def handle_message(data):
 def on_create_room(data):
     print('test')
     roomName = data['roomName']
-    password = encrypt(data['password'], app.config['SECRET_KEY'])
+    password = encrypt(data['roomPassword'], app.config['SECRET_KEY'])
     end_time = int(data['end_time'])
     ending_time = datetime.now() + timedelta(minutes = end_time)
     print(ending_time)
@@ -48,6 +48,9 @@ def on_create_room(data):
     room = Room(roomName, password, ending_time)
     lisrooms.append(room)
     join_room(room.id)
+
+    save_key(data['publicKey'], data['privateKey'], room.id)
+
     return {'id': str(room.id)}
 
 
@@ -85,19 +88,34 @@ def on_join_room(data):
 
         return {'roomName': room.roomName,
                 'messages': decrypted_messages_json,
-                'pseudo': pseudo}
+                'pseudo': pseudo,
+                'privateKey': get_private_key(data['publicKey'], id)}
     else:
         return None
 
 
-@app.route('/api/room/share', methods=['POST'])
-def share_room():
-    data = request.json
-    try:
-        send_room_link(data['email'], data['room-url'])
-        return {'status': 'email sent'}
-    except:
-        return {'status': 'error', 'message': 'error while sending email'}
+@socketio.on('sharelink')
+def share_room(data):
+
+    id = data['id']
+    room = next((room for room in lisrooms if room.id == id), None)
+
+    if room.password == encrypt(data['password'], app.config['SECRET_KEY']):
+        try:
+            send_room_link(data['email'], data['room_url'])
+            return {'status': 'ok', 'message': 'email sent'}
+        except Exception as e:
+            print(e)
+            return {'status': 'error', 'message': 'error while sending email'}
+    else:
+        return {'status': 'error', 'message': 'wrong password'}
+
+
+@socketio.on('getpublickey')
+def get_key(data):
+
+    print(data)
+    return {'public_key': get_public_key(data['room'])}
 
 def remove_expired_rooms():
     for room in lisrooms:
