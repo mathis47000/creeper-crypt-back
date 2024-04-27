@@ -1,9 +1,11 @@
-
 import json
 import os
+import schedule
+import time
 
 from flask import Flask, request
-from flask_socketio import SocketIO, emit, join_room, leave_room
+from flask_socketio import SocketIO, emit, join_room, leave_room, close_room
+from datetime import datetime, timedelta
 
 from service import pseudo_generator
 from model import Room, Message
@@ -36,9 +38,14 @@ def handle_message(data):
 
 @socketio.on('createroom')
 def on_create_room(data):
+    print('test')
     roomName = data['roomName']
     password = encrypt(data['password'], app.config['SECRET_KEY'])
-    room = Room(roomName, password)
+    end_time = int(data['end_time'])
+    ending_time = datetime.now() + timedelta(minutes = end_time)
+    print(ending_time)
+    
+    room = Room(roomName, password, ending_time)
     lisrooms.append(room)
     join_room(room.id)
     return {'id': str(room.id)}
@@ -92,6 +99,20 @@ def share_room():
     except:
         return {'status': 'error', 'message': 'error while sending email'}
 
+def remove_expired_rooms():
+    for room in lisrooms:
+        if room.is_expired():
+            schedule.at(room.end_time).do(close_room(room.id))
+            lisrooms.remove(room)
+
+@socketio.on('close_room')
+def on_close_room(room_id):
+    room = next((room for room in lisrooms if room.id == room_id), None)
+    lisrooms.remove(room)
+    close_room(room_id)
 
 if __name__ == '__main__':
     socketio.run(app)
+    while True:
+        remove_expired_rooms()
+        time.sleep(1)
