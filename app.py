@@ -1,8 +1,10 @@
 import json
 import os
-
+import time
+import threading
 from flask import Flask, request
-from flask_socketio import SocketIO, emit, join_room, leave_room
+from flask_socketio import SocketIO, emit, join_room, leave_room, close_room
+from datetime import datetime, timedelta
 
 from service import pseudo_generator
 from model import Room, Message
@@ -26,7 +28,10 @@ lisrooms = []
 @socketio.on('message')
 def handle_message(data):
     room = next((room for room in lisrooms if room.id == data['id']), None)
-
+    if room.is_expired():
+        print(f"Room {room} has expired.")
+        lisrooms.remove(room)
+        close_room(room.id)
     message_encrypted = Message(data['message'], data['pseudo']).crypt_message(app.config['SECRET_KEY'])
     room.add_message(json.dumps(message_encrypted.__dict__))
 
@@ -35,9 +40,14 @@ def handle_message(data):
 
 @socketio.on('createroom')
 def on_create_room(data):
+    print('test')
     roomName = data['roomName']
     password = encrypt(data['roomPassword'], app.config['SECRET_KEY'])
-    room = Room(roomName, password)
+    end_time = int(data['end_time'])
+    ending_time = datetime.now() + timedelta(minutes = end_time)
+    print(ending_time)
+    
+    room = Room(roomName, password, ending_time)
     lisrooms.append(room)
     join_room(room.id)
 
@@ -49,7 +59,6 @@ def on_create_room(data):
 @socketio.on('connect')
 def handle_connect():
     print('connected')
-
 
 @socketio.on('disconnect')
 def handle_disconnect():
@@ -64,6 +73,10 @@ def on_join_room(data):
     # get room
     id = data['id']
     room = next((room for room in lisrooms if room.id == id), None)
+    if room.is_expired():
+        print(f"Room {room} has expired.")
+        lisrooms.remove(room)
+        close_room(room.id)
     # if room password is correct
     if room.password == encrypt(data['password'], app.config['SECRET_KEY']):
         join_room(id)
@@ -109,6 +122,6 @@ def get_key(data):
     print(data)
     return {'public_key': get_public_key(data['room'])}
 
-
 if __name__ == '__main__':
     socketio.run(app)
+    

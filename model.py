@@ -2,14 +2,16 @@ import json
 import uuid
 
 from service.security_utils import encrypt, decrypt
+from datetime import datetime
 
 
 class Room:
-    def __init__(self, roomName, password):
+    def __init__(self, roomName, password, end_time):
         self.id = str(uuid.uuid4())
         self.roomName = roomName
         self.password = password
         self.messages = []
+        self.end_time = end_time
         
     def add_message(self, message):
         self.messages.append(message)
@@ -19,6 +21,10 @@ class Room:
 
     def get_decrypted_messages(self, key):
         return [Message(json.loads(message).get('content'),json.loads(message).get('pseudo')).decrypt_message(key) for message in self.messages]
+    
+    def is_expired(self):
+        current_time = datetime.now()
+        return current_time > self.end_time
 
 class Message:
     def __init__(self, content, pseudo):
