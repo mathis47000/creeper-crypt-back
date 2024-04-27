@@ -1,8 +1,7 @@
 import json
 import os
-import schedule
 import time
-
+import threading
 from flask import Flask, request
 from flask_socketio import SocketIO, emit, join_room, leave_room, close_room
 from datetime import datetime, timedelta
@@ -29,7 +28,10 @@ lisrooms = []
 @socketio.on('message')
 def handle_message(data):
     room = next((room for room in lisrooms if room.id == data['id']), None)
-
+    if room.is_expired():
+        print(f"Room {room} has expired.")
+        lisrooms.remove(room)
+        close_room(room.id)
     message_encrypted = Message(data['message'], data['pseudo']).crypt_message(app.config['SECRET_KEY'])
     room.add_message(json.dumps(message_encrypted.__dict__))
 
@@ -58,7 +60,6 @@ def on_create_room(data):
 def handle_connect():
     print('connected')
 
-
 @socketio.on('disconnect')
 def handle_disconnect():
     # remove user from all his rooms
@@ -72,6 +73,10 @@ def on_join_room(data):
     # get room
     id = data['id']
     room = next((room for room in lisrooms if room.id == id), None)
+    if room.is_expired():
+        print(f"Room {room} has expired.")
+        lisrooms.remove(room)
+        close_room(room.id)
     # if room password is correct
     if room.password == encrypt(data['password'], app.config['SECRET_KEY']):
         join_room(id)
@@ -117,20 +122,6 @@ def get_key(data):
     print(data)
     return {'public_key': get_public_key(data['room'])}
 
-def remove_expired_rooms():
-    for room in lisrooms:
-        if room.is_expired():
-            schedule.at(room.end_time).do(close_room(room.id))
-            lisrooms.remove(room)
-
-@socketio.on('close_room')
-def on_close_room(room_id):
-    room = next((room for room in lisrooms if room.id == room_id), None)
-    lisrooms.remove(room)
-    close_room(room_id)
-
 if __name__ == '__main__':
     socketio.run(app)
-    while True:
-        remove_expired_rooms()
-        time.sleep(1)
+    
