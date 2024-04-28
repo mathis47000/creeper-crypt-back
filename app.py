@@ -32,7 +32,7 @@ def handle_message(data):
         print(f"Room {room} has expired.")
         lisrooms.remove(room)
         close_room(room.id)
-        socketio.emit('close_room', room.id)
+        socketio.emit('close_room')
     message_encrypted = Message(data['message'], data['pseudo']).crypt_message(app.config['SECRET_KEY'])
     room.add_message(json.dumps(message_encrypted.__dict__))
 
@@ -50,6 +50,7 @@ def on_create_room(data):
     
     room = Room(roomName, password, ending_time)
     lisrooms.append(room)
+    print(room.id)
     join_room(room.id)
 
     save_key(data['publicKey'], data['privateKey'], room.id)
@@ -74,10 +75,16 @@ def on_join_room(data):
     # get room
     id = data['id']
     room = next((room for room in lisrooms if room.id == id), None)
+    # if room does not exist
+    if room is None:
+        print(f"Room {room} has been deleted.")
+        socketio.emit('close_room')
+        return None
     if room.is_expired():
         print(f"Room {room} has expired.")
         lisrooms.remove(room)
         close_room(room.id)
+        return None
     # if room password is correct
     if room.password == encrypt(data['password'], app.config['SECRET_KEY']):
         join_room(id)
