@@ -25,7 +25,7 @@ class Room:
         self.users.append(user)
         
     def get_users(self):
-        return [user.__dict__ for user in self.users]
+        return {'users':json.dumps([user.__dict__ for user in self.users]), 'limitUsers':self.limitUsers}
     
     def get_users_id(self):
         return [user.get_id() for user in self.users]

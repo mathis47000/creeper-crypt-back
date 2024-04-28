@@ -58,7 +58,6 @@ def handle_connect():
 
 @socketio.on('disconnect')
 def handle_disconnect(): 
-    print(request.sid)
     user_id = request.sid
     room_of_user = next((room for room in lisrooms if user_id in room.get_users_id()), None)
     if room_of_user is not None:
@@ -88,7 +87,7 @@ def on_join_room(data):
         if room.limit_reached():
             return None
         room.add_user(User(pseudo, request.sid))
-        socketio.emit('listUsers', json.dumps(room.get_users()), to=id)
+        socketio.emit('listUsers', room.get_users(), to=id)
         decrypted_messages_json = [json.dumps(message.__dict__) for message in decrypted_messages]
 
         return {'roomName': room.roomName,
