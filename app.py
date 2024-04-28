@@ -1,7 +1,5 @@
 import json
 import os
-import time
-import threading
 from flask import Flask, request
 from flask_socketio import SocketIO, emit, join_room, leave_room, close_room
 from datetime import datetime, timedelta
@@ -12,8 +10,6 @@ from service.email_service import send_room_link
 from service.security_utils import encrypt, get_private_key, save_key, get_public_key
 
 app = Flask(__name__)
-
-# db = create_connection()
 
 
 try:
@@ -40,14 +36,14 @@ def handle_message(data):
 
 @socketio.on('createroom')
 def on_create_room(data):
-    print('test')
     roomName = data['roomName']
     password = encrypt(data['roomPassword'], app.config['SECRET_KEY'])
     end_time = int(data['end_time'])
+    limitUsers = int(data['limitUsers'])
     ending_time = datetime.now() + timedelta(minutes = end_time)
     print(ending_time)
     
-    room = Room(roomName, password, ending_time)
+    room = Room(roomName, password, ending_time, limitUsers)
     lisrooms.append(room)
     join_room(room.id)
 
@@ -89,7 +85,7 @@ def on_join_room(data):
             # check if pseudo is not already used in room
             if pseudo not in decrypted_messages:
                 break
-        if len(room.users) >= room.limitUsers:
+        if room.limit_reached():
             return None
         room.add_user(User(pseudo, request.sid))
         socketio.emit('listUsers', json.dumps(room.get_users()), to=id)

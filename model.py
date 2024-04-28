@@ -6,12 +6,12 @@ from datetime import datetime
 
 
 class Room:
-    def __init__(self, roomName, password, end_time):
+    def __init__(self, roomName, password, end_time, limitUsers):
         self.id = str(uuid.uuid4())
         self.roomName = roomName
         self.password = password
         self.users = []
-        self.limitUsers = 2
+        self.limitUsers = limitUsers
         self.messages = []
         self.end_time = end_time
         
@@ -39,6 +39,9 @@ class Room:
     def is_expired(self):
         current_time = datetime.now()
         return current_time > self.end_time
+
+    def limit_reached(self):
+        return len(self.users) >= self.limitUsers
 
 class Message:
     def __init__(self, content, pseudo):
