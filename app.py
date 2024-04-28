@@ -32,6 +32,7 @@ def handle_message(data):
         print(f"Room {room} has expired.")
         lisrooms.remove(room)
         close_room(room.id)
+        socketio.emit('close_room', room.id)
     message_encrypted = Message(data['message'], data['pseudo']).crypt_message(app.config['SECRET_KEY'])
     room.add_message(json.dumps(message_encrypted.__dict__))
 
